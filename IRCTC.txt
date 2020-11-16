@@ -36,18 +36,17 @@ Problem statement:
 	
 3.Components:
 
-			Payment	  Notification
-			service	  service
-				|		|
-				|		|
+			Payment	  	Notification
+			service	  	service
+			|		|
+			|		|
 			--> Web server -->	
-	Gateway	--> Web server -->	Data base
+	Gateway		--> Web server -->	Data base
 			--> Web server --> 
-				|		|
-				|		|
-				|		|
-			User		Cache(Distributed cache)
-			Account			
+			|		|
+			|		|
+			User		Cache
+			Account		(Distributed cache)	
 				
 				
 
