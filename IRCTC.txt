@@ -62,10 +62,10 @@ Problem statement:
 	
 	Gateway/API layer:
 		Apis exposed are
-			GET		Train	//Gets train details. 	Input:	TrainNo,Train name,From place, to place,date,..etc	
-			POST 	Ticket	//Book a ticket			Input:	TrainNo,from,to,date,Seat specification,No.of.tickets..etc
+			GET		Train	//Gets train details. 		Input:	TrainNo,Train name,From place, to place,date,..etc	
+			POST 		Ticket	//Book a ticket			Input:	TrainNo,from,to,date,Seat specification,No.of.tickets..etc
 			PUT		Ticket	//Modify a ticket		Input: 	TicketNo,[options to modify based on above parameters]
-			Delete	Ticket	//Delete a ticket 		Input:	TicketNo.
+			Delete		Ticket	//Delete a ticket 		Input:	TicketNo.
 	
 	Web server layer:
 		web server layer is the middle layer between cache, db,other services in the system.
@@ -74,11 +74,13 @@ Problem statement:
 		We can have indexes for each below tables. If needed, we can shard the data if it grows big.
 		Tables:
 			Train(TrainId primary key,Train name,Status) 			//status is Running,Repair,Starting...etc, we can index train name.
-			Coach(coachId,trainId,coachType,status)					//coachType -->AC,NonAC..etc	
-			Seat(seatId,coachId,seatType)							//seatType 	-->upper,lower,window 
+			Coach(coachId,trainId,coachType,status)				//coachType -->AC,NonAC..etc	
+			Seat(seatId,coachId,seatType)					//seatType 	-->upper,lower,window 
 			StationInfo(stationId,station name,station address)		//Places information
-			TrainStationAssoc(stationId,trainId,sequenceId)			//sequenceId will tell, in which order train will go to each station.1 is stating station and last sequenceId is destinatinoId.
-			SeatAllocation(seatId,fromSequenceId,ToSequenceId,price)//Based on no.of stations travelling, as of now, we can decide price.
+			TrainStationAssoc(stationId,trainId,sequenceId,distance)	//sequenceId will tell, in which order train will go to each station.
+											//1 is stating station and last sequenceId is destinatinoId.
+											//distance will have distance from each stations.
+			SeatAllocation(seatId,fromSequenceId,ToSequenceId,price)	//Based on no.of stations travelling, as of now, we can decide price.
 			UserSeatAssoc(userId,seatId)
 			
 	UserAccount service:
