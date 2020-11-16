@@ -1,0 +1,107 @@
+IRCTC/Train ticket booking System:
+
+Problem statement:	
+	User should able to login to system.
+	User might search train //[from : to]
+	User can book tickets, cancel ticket, Modify ticket,view booked ticket. 
+	Book ticket involves system to allocate seats, payment, notify ticket through mail, mobile sms, whats app...etc
+	Modify ticket involves change of date , train , no.of tickets..etc 
+	Cancel ticket involves to cancel the booked ticket. system should refund the amount based on when it is cancelled.
+	View ticket should show the ticket which is booked.
+	
+	
+	//Lets omit below features as of now for simplicity
+	//cargo trains, meal ordering,allocating tickets based on gender.. 
+	
+1.Features
+	Search train 
+	Book ticket
+	Modify ticket
+	Cancel ticket 
+	Payment
+	Notification feature
+	Account management --> Create account,Login,Modify account...etc
+	Irctc Wallet Maintance
+	
+	Lets first focus on search trains,book ticket, Payment, notification features
+	
+
+2.Designing for right scale:(Approx)
+	1000 million ppl live in india(100 crores approx)
+	lets take as example half the population travel by train.
+	so, 500 million.
+	Lets assume 10 percent of ppl try to visit our page per day.
+	So, 50 million per day.
+	2 million requests for an hour. 
+	
+3.Components:
+
+			Payment	  Notification
+			service	  service
+				|		|
+				|		|
+			--> Web server -->	
+	Gateway	--> Web server -->	Data base
+			--> Web server --> 
+				|		|
+				|		|
+				|		|
+			User		Cache(Distributed cache)
+			Account			
+				
+				
+
+	Gateway/API -->	Acts as load balancer, proxy & removes unwanted headers from request.
+	Web server 	--> Handles book,modify,cancel & view tickets
+	Data base 	--> Data base layer will have data like Train, place information, seat information..etc
+	Cache layer --> cache layer will have relevent data in cache to serve GET requests
+	Payment 	--> Payment service will have its own db and talks with differnt payment gateways for payments.
+	Notification--> On all operation completed, web servers will inform notification services to notify the user either through sms,email,whats app.etc
+	We can maintain a queue in between web server layer and payment/Notification layer. so notification layer will process data in queue... In order to avoid bottle necks.
+
+4.Lets go each layer one by one:
+	
+	Gateway/API layer:
+		Apis exposed are
+			GET		Train	//Gets train details. 	Input:	TrainNo,Train name,From place, to place,date,..etc	
+			POST 	Ticket	//Book a ticket			Input:	TrainNo,from,to,date,Seat specification,No.of.tickets..etc
+			PUT		Ticket	//Modify a ticket		Input: 	TicketNo,[options to modify based on above parameters]
+			Delete	Ticket	//Delete a ticket 		Input:	TicketNo.
+	
+	Web server layer:
+		web server layer is the middle layer between cache, db,other services in the system.
+	
+	Data base layer:(SQL)
+		We can have indexes for each below tables. If needed, we can shard the data if it grows big.
+		Tables:
+			Train(TrainId primary key,Train name,Status) 			//status is Running,Repair,Starting...etc, we can index train name.
+			Coach(coachId,trainId,coachType,status)					//coachType -->AC,NonAC..etc	
+			Seat(seatId,coachId,seatType)							//seatType 	-->upper,lower,window 
+			StationInfo(stationId,station name,station address)		//Places information
+			TrainStationAssoc(stationId,trainId,sequenceId)			//sequenceId will tell, in which order train will go to each station.1 is stating station and last sequenceId is destinatinoId.
+			SeatAllocation(seatId,fromSequenceId,ToSequenceId,price)//Based on no.of stations travelling, as of now, we can decide price.
+			UserSeatAssoc(userId,seatId)
+			
+	UserAccount service:
+		this service will have all user related stuffs like, 
+		Account info.
+		Login sessions.
+		users ticket 
+		users wallet info...etc
+		
+	Notification service:
+		This service is a messaging service.
+		Once after ticket operation is made, notification service will pick task from a notif queue and sends push notification to users based on user preference.
+		This service is async. As in after operation is done in web service layer, a async call made to notification service to do notification.
+		
+	Payment Service:
+		On ticket booking, a call to payment service is called with call back input from web service layer.
+		Payment service has all payment gateways.
+		User can pay the amount and after successful payment, payment service will give a call back to our web service layer.
+		Also there will be a timeout, web service layer should consider payment as failed if timedout.
+		On success of payment only, seat should be allocated.
+
+	Cache Layer:(No SQL)
+		Train informations,seat, informations can be synced in cache for faster reads.
+		No sql db like Redis which is a distributed cache can be maintained.
+
